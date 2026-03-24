@@ -8,7 +8,6 @@ from pydantic import BaseModel
 
 app = FastAPI(title="Green API DevOps Backend")
 
-# 1. Настройка CORS (на всякий случай, если фронтенд будет на другом порту)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Разрешить все источники (для теста)
@@ -16,8 +15,6 @@ app.add_middleware(
     allow_methods=["*"],  # Разрешить все HTTP методы
     allow_headers=["*"],  # Разрешить все заголовки
 )
-
-# 2. Определение моделей данных Pydantic (схемы запросов)
 
 
 class CommonApiCreds(BaseModel):
@@ -35,13 +32,9 @@ class FileRequest(CommonApiCreds):
     urlFile: str       # Ссылка на файл
     fileName: str      # Имя файла
 
-# Вспомогательная функция для формирования URL
-
 
 def get_url(creds: CommonApiCreds, method: str) -> str:
     return f"https://api.green-api.com/waInstance{creds.idInstance}/{method}/{creds.apiTokenInstance}"
-
-# 3. API Эндпоинты
 
 
 @app.post("/getSettings")
@@ -102,18 +95,14 @@ def send_file(data: FileRequest):
             status_code=500, detail=f"Green API Error: {str(e)}")
 
 
-# 4. Раздача фронтенда (ДОЛЖНО БЫТЬ В КОНЦЕ!)
-
 # Проверяем, существует ли папка static
 STATIC_DIR = "static"
 if not os.path.exists(STATIC_DIR):
     os.makedirs(STATIC_DIR)
 
-# Монтируем папку static для доступа к CSS/JS (если они будут в отдельных файлах)
+
 # Будет доступно по URL: http://localhost:8000/static/
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-
-# Главная страница. При обращении к '/' отдаем index.html
 
 
 # Не показываем этот эндпоинт в Swagger UI

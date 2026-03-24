@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GREEN-API DevOps Task</title>
+    <style>
+        /* Основные стили страницы */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #f0f2f5;
+        }
+
+        /* Панель управления (слева) */
+        .control-panel {
+            width: 40%;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Отступ между элементами */
+            background-color: #ffffff;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            overflow-y: auto; /* Прокрутка, если элементов много */
+        }
+
+        /* Контейнер вывода (справа) */
+        .output-container {
+            width: 60%;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #00a884; /* Зеленая полоса GREEN-API */
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* Стили для полей ввода и кнопок */
+        input, textarea, button {
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            outline: none; /* Убираем стандартный контур */
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus {
+            border-color: #00a884; /* Зеленая рамка при фокусе */
+            box-shadow: 0 0 0 2px rgba(0, 168, 132, 0.2);
+        }
+
+        textarea {
+            resize: vertical; /* Разрешаем менять размер по вертикали */
+            height: 100px;
+        }
+
+        /* Стили для кнопок */
+        button {
+            background-color: #00a884; /* Фирменный зеленый */
+            color: white;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            background-color: #008f71; /* Чуть темнее при наведении */
+        }
+
+        button:active {
+            transform: translateY(1px); /* Эффект нажатия */
+        }
+
+        /* Разделительная линия */
+        hr {
+            border: 0;
+            border-top: 1px solid #eee;
+            margin: 10px 0;
+        }
+
+        /* Окно вывода ответа (справа) */
+        #responseOutput {
+            flex-grow: 1; /* Занимает все доступное место */
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', Courier, monospace; /* Моноширинный шрифт */
+            font-size: 13px;
+            color: #444;
+            white-space: pre-wrap; /* Сохраняет отступы и переносы */
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="control-panel">
+        <h2>GREEN-API КЛИЕНТ</h2>
+
+        <input type="text" id="idInstance" placeholder="idInstance (обязательно)" required>
+        <input type="text" id="apiTokenInstance" placeholder="apiTokenInstance (обязательно)" required>
+        <hr>
+
+        <button onclick="callApi('getSettings')">getSettings</button>
+        <button onclick="callApi('getStateInstance')">getStateInstance</button>
+        <hr>
+
+        <input type="text" id="chatIdMessage" placeholder="79991234567 (номер без +)">
+        <textarea id="message" placeholder="Введите ваше сообщение..."></textarea>
+        <button onclick="callApi('sendMessage')">sendMessage</button>
+        <hr>
+
+        <input type="text" id="chatIdFile" placeholder="79991234567 (номер без +)">
+        <input type="text" id="urlFile" placeholder="https://ссылка.com/файл.jpg">
+        <input type="text" id="fileName" placeholder="file_name.jpg">
+        <button onclick="callApi('sendFileByUrl')">sendFileByUrl</button>
+    </div>
+
+    <div class="output-container">
+        <h2>Ответ API (JSON)</h2>
+        <pre id="responseOutput">Ожидание запроса...</pre>
+    </div>
+
+    <script>
+        // Функция для отправки запроса на наш FastAPI бэкенд
+        async function callApi(method) {
+            const responseOutput = document.getElementById('responseOutput');
+            responseOutput.textContent = "Отправка запроса..."; // Индикация загрузки
+
+            // Собираем данные со всех полей
+            const data = {
+                idInstance: document.getElementById('idInstance').value.trim(),
+                apiTokenInstance: document.getElementById('apiTokenInstance').value.trim(),
+                chatIdMessage: document.getElementById('chatIdMessage').value.trim(),
+                message: document.getElementById('message').value.trim(),
+                chatIdFile: document.getElementById('chatIdFile').value.trim(),
+                urlFile: document.getElementById('urlFile').value.trim(),
+                fileName: document.getElementById('fileName').value.trim()
+            };
+
+            // Простая валидация: idInstance и токен должны быть заполнены
+            if (!data.idInstance || !data.apiTokenInstance) {
+                responseOutput.textContent = "Ошибка: Заполните idInstance и apiTokenInstance!";
+                return;
+            }
+
+            try {
+                // Отправляем POST запрос на наш бэкенд. Путь соответствует методу.
+                // Адрес '/' т.к. бэкенд запущен на том же порту.
+                const response = await fetch(`/${method}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data) // Преобразуем объект в JSON-строку
+                });
+
+                // Получаем ответ от бэкенда
+                const result = await response.json();
+
+                // Выводим ответ в красивом JSON формате
+                responseOutput.textContent = JSON.stringify(result, null, 2);
+                
+            } catch (error) {
+                // Обработка сетевых ошибок
+                console.error('Ошибка:', error);
+                responseOutput.textContent = `Ошибка при отправке запроса: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
